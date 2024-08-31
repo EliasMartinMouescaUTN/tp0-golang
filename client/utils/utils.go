@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type Mensaje struct {
@@ -34,20 +35,32 @@ func IniciarConfiguracion(filePath string) *globals.Config {
 	return config
 }
 
-func LeerConsola() {
+func LeerConsola() string {
 	// Leer de la consola
 	reader := bufio.NewReader(os.Stdin)
 	log.Println("Ingrese los mensajes")
 	text, _ := reader.ReadString('\n')
 	log.Print(text)
+	return text
 }
 
 func GenerarYEnviarPaquete() {
 	paquete := Paquete{}
 	// Leemos y cargamos el paquete
+	for {
+		leido := LeerConsola()
+		leido = strings.TrimSpace(leido)
 
-	log.Printf("paqute a enviar: %+v", paquete)
-	// Enviamos el paqute
+		if leido == "" {
+			break
+		}
+
+		paquete.Valores = append(paquete.Valores, leido)
+
+	}
+
+	log.Printf("paquete a enviar: %+v", paquete)
+	EnviarPaquete(globals.ClientConfig.Ip, globals.ClientConfig.Puerto, paquete)
 }
 
 func EnviarMensaje(ip string, puerto int, mensajeTxt string) {
@@ -60,7 +73,7 @@ func EnviarMensaje(ip string, puerto int, mensajeTxt string) {
 	url := fmt.Sprintf("http://%s:%d/mensaje", ip, puerto)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		log.Printf("error enviando mensaje a ip:%s puerto:%d", ip, puerto)
+		log.Fatalf("error enviando mensaje a ip:%s puerto:%d", ip, puerto)
 	}
 
 	log.Printf("respuesta del servidor: %s", resp.Status)
